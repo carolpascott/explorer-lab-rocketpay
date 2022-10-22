@@ -19,18 +19,17 @@ function setCardType(type) {
 
   ccLogo.setAttribute("src", `cc-${type}.svg`)
 }
-
-// global function
-//console: windows.setCardType("visa")
+//função global > console: windows.setCardType("type")
 globalThis.setCardType = setCardType
 
 
 const securityCode = document.querySelector("#security-code")
 const securityCodePattern = {
-  mask: "0000"  //imask
+  mask: "0000"
 }
 
 const securityCodeMasked = IMask(securityCode, securityCodePattern)
+
 
 const expirationDate = document.querySelector("#expiration-date")
 const expirationDatePattern = {
@@ -51,24 +50,24 @@ const expirationDatePattern = {
 
 const expirationDateMasked = IMask(expirationDate, expirationDatePattern)
 
+
 const cardNumber = document.querySelector("#card-number")
 const cardNumberPattern = {
   mask: [
     {
+      //regra visa: inicia com num 4, seguido de 15 digitos
+      //d{0,15} é p/ não esperar digitar tudo, tendo o 4 já muda a bandeira p/ visa
       mask: "0000 0000 0000 0000",
-      //inicia com num 4, seguido de 15 digitos
-      //d{0,15} é p/ não esperar digitar tudo, tendo o 4
-      //já muda a bandeira p/ visa
-      //regex: /^4\d{0,15}/,
-      regex: /^4/,
+      regex: /^4\d{0,15}/,
       cardtype: "visa",
     },
     {
+      //regra master: inicia com 5, prox digito entre 1 e 5 seguido de dois digitos 
+      //OU inicia com 22, prox digito entre 2 e 9 seguido de 1 digito
+      //OU inicia com 2, prox digito entre 3 e 7 seguido de 2 digitos
+      //seguem mais 12 digitos.
       mask: "0000 0000 0000 0000",
-      //inicia com 5, prox digito entre 1 e 5
-      //seguido de dois digitos ou...
-      //regex: /(^5[1-5\d{0,2}])/,//continua
-      regex: /^5/,
+      regex: /(^5[1-5]\d{0,2}|^22[2-9]\d|^2[3-7]\d{0,2})\d{0,12}/,
       cardtype: "mastercard",
     },
     {
@@ -76,31 +75,37 @@ const cardNumberPattern = {
       cardtype: "default",
     },
   ],
+  //exemplo das prox funções na doc imask
   dispatch: function (appended, dynamicMasked) {
-      //substitui tudo que não é digito por vazio
-      const number = (dynamicMasked.value + appended).replace(/\D/g,"")
-      //retorna o regex se deu match na mascara
-      const foundMask = dynamicMasked.compiledMasks.find(function (item) {
-        return number.match(item.regex)
-      })
-      console.log(foundMask)
-
-      return foundMask
-},
+    //substitui tudo que não é digito por vazio
+    const number = (dynamicMasked.value + appended).replace(/\D/g, "")
+    //retorna o regex se deu match na mascara
+    const foundMask = dynamicMasked.compiledMasks.find(function (item) {
+      return number.match(item.regex)
+    })
+    //console.log(foundMask)
+    return foundMask
+  },
 }
 
 const cardNumberMasked = IMask(cardNumber, cardNumberPattern)
 
+
 const addButton = document.querySelector("#add-card")
-// or () => {} //function anonimous
+
 addButton.addEventListener("click", () => {
   alert("Cartão adicionado")
 })
 
+//p/ retirar o padrão que é recarregar a página
 document.querySelector("form").addEventListener("submit", (event) => {
   event.preventDefault()
 })
 
+
+//funções seguintes são p/ atualizar os valores digitados, que passaram pelas mascaras,
+//na imagem do cartão.
+//digitou algo e apagou, volta ao texto padrão
 const cardHolder = document.querySelector("#card-holder")
 
 cardHolder.addEventListener("input", () => {
@@ -109,19 +114,22 @@ cardHolder.addEventListener("input", () => {
   ccHolder.innerText = cardHolder.value.length === 0 ? "FULANO DA SILVA" : cardHolder.value 
 })
 
+
 securityCodeMasked.on("accept", () => {
   updateSecurityCode(securityCodeMasked.value)
 })
 
 function updateSecurityCode(code) {
   const ccSecurity = document.querySelector(".cc-security .value")
-
   ccSecurity.innerText = code.length === 0 ? "123" : code
 }
 
+
 cardNumberMasked.on("accept", () => {
+  //atualiza logo e cor do cartão
   const cardType = cardNumberMasked.masked.currentMask.cardtype
   setCardType(cardType)
+  //atualiza num cartão ao digitar
   updateCardNumber(cardNumberMasked.value)
 })
 
@@ -130,6 +138,7 @@ function updateCardNumber(number) {
 
   ccNumber.innerText = number.length === 0 ? "1234 5678 9012 3456" : number
 }
+
 
 expirationDateMasked.on("accept", () => {
   updateExpirationDate(expirationDateMasked.value)
